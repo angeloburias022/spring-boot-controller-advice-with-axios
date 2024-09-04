@@ -2,7 +2,12 @@ package com.springboot.controller_advice.controller;
 
 import org.springframework.http.HttpStatus; // Imports the HttpStatus enumeration for specifying HTTP status codes.
 import org.springframework.http.ResponseEntity; // Imports the ResponseEntity class for returning HTTP responses.
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*; // Imports annotations for mapping HTTP requests to controller methods.
+
+import com.springboot.controller_advice.dto.UserDto;
+
+import jakarta.validation.Valid;
 
 import java.util.HashMap; // Imports the HashMap class for managing key-value pairs.
 import java.util.Map; // Imports the Map interface for working with mappings.
@@ -54,14 +59,14 @@ public class DemoController {
      *         curl -X POST http://localhost:8080/api/items -d "id=1&value=SampleItem"
      */
     @PostMapping("/items") // Maps HTTP POST requests to /api/items to this method.
-    public ResponseEntity<String> createItem(@RequestParam int id, @RequestParam String value) {
+    public ResponseEntity<String> createItem(@Valid @RequestBody UserDto value) {
         // Checks if the item already exists in the data store.
-        if (dataStore.containsKey(id)) {
+        if (dataStore.containsKey(value.getId())) {
             // Returns a 409 Conflict status if the item already exists.
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Item already exists");
         }
         // Adds the new item to the data store.
-        dataStore.put(id, value);
+        dataStore.put(value.getId(), value.getFirstName());
         // Returns a 201 Created status with a success message.
         return ResponseEntity.status(HttpStatus.CREATED).body("Item created successfully");
     }

@@ -6,14 +6,45 @@ import java.util.Map; // Imports the Map interface, which provides a structure f
 
 import org.springframework.http.HttpStatus; // Imports the HttpStatus enumeration, which contains HTTP status codes.
 import org.springframework.http.ResponseEntity; // Imports the ResponseEntity class, used to represent HTTP responses.
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice; // Imports the ControllerAdvice annotation, which allows defining global exception handling.
 import org.springframework.web.bind.annotation.ExceptionHandler; // Imports the ExceptionHandler annotation, used to specify the exception types to handle.
 import org.springframework.web.bind.MethodArgumentNotValidException; // Imports MethodArgumentNotValidException for handling validation errors.
 
-@ControllerAdvice // Marks this class as a global exception handler for all controllers in the
-                  // application.
+    @ControllerAdvice // Marks this class as a global exception handler for all controllers in the
+                    // application.
 public class GlobalExceptionHandler {
 
+    /**
+     * Handles MethodArgumentNotValidException for validation errors and returns a
+     * 400 Bad Request status.
+     *
+     * @param ex the MethodArgumentNotValidException thrown when method arguments
+     *           fail validation
+     * @return ResponseEntity containing a map with error details and an HTTP status
+     *         code
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class) // Handles validation errors for method arguments.
+    public ResponseEntity<Map<String, Object>> handleArgumentMethod(MethodArgumentNotValidException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value()); // Sets the status code to 400.
+        response.put("error", "Validation Error");
+
+        // Extract detailed error messages
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        response.put("message", "Validation failed for one or more arguments.");
+        response.put("errors", errors); // Add specific field errors
+        response.put("path", "/api/error");
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST); // Returns response with 400 status.
+    }
     /**
      * Handles RuntimeException and sends a structured response with details about
      * the error.
@@ -32,7 +63,7 @@ public class GlobalExceptionHandler {
         response.put("path", "/api/error"); // Adds the request path where the error occurred.
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST); // Returns the response entity with error
-                                                                       // details.
+                                                                    // details.
     }
 
     /**
@@ -75,44 +106,5 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST); // Returns response with 400 status.
     }
 
-    /**
-     * Handles MethodArgumentNotValidException for validation errors and returns a
-     * 400 Bad Request status.
-     *
-     * @param ex the MethodArgumentNotValidException thrown when method arguments
-     *           fail validation
-     * @return ResponseEntity containing a map with error details and an HTTP status
-     *         code
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class) // Handles validation errors for method arguments.
-    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value()); // Sets the status code to 400.
-        response.put("error", "Validation Error");
-        response.put("message", "Validation failed for one or more arguments.");
-        response.put("path", "/api/error");
 
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST); // Returns response with 400 status.
-    }
-
-    // /**
-    //  * Handles EntityNotFoundException when an entity is not found in the database
-    //  * and returns a 404 Not Found status.
-    //  *
-    //  * @param ex the EntityNotFoundException thrown when an entity is not found
-    //  * @return ResponseEntity containing a map with error details and an HTTP status
-    //  *         code
-    //  */
-    // @ExceptionHandler(EntityNotFoundException.class) // Handles exceptions when an entity is not found.
-    // public ResponseEntity<Map<String, Object>> handleEntityNotFoundException(EntityNotFoundException ex) {
-    //     Map<String, Object> response = new HashMap<>();
-    //     response.put("timestamp", LocalDateTime.now());
-    //     response.put("status", HttpStatus.NOT_FOUND.value()); // Sets the status code to 404.
-    //     response.put("error", "Not Found");
-    //     response.put("message", ex.getMessage());
-    //     response.put("path", "/api/error");
-
-    //     return new ResponseEntity<>(response, HttpStatus.NOT_FOUND); // Returns response with 404 status.
-    // }
 }
